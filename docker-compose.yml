@@ -1,0 +1,118 @@
+services:
+  db:
+    image: postgres:16
+    container_name: mailtest-db
+    environment:
+      POSTGRES_USER: mailtest
+      POSTGRES_PASSWORD: mailtest
+      POSTGRES_DB: mailtest
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    image: mailtest-api
+    container_name: mailtest-api
+    environment:
+      DATABASE_URL: postgresql://mailtest:mailtest@db:5432/mailtest
+      # Demo / portfolio safety rails. See api/demo_mode.py.
+      # Flip DEMO_MODE to "true" on the public deploy and set ADMIN_API_KEY
+      # to a long random string so you (and only you) can still hit the
+      # destructive endpoints by passing `X-Admin-Key: <value>`.
+      DEMO_MODE: "${DEMO_MODE:-false}"
+      ADMIN_API_KEY: "${ADMIN_API_KEY:-}"
+      MAX_INGEST_BYTES: "${MAX_INGEST_BYTES:-1048576}"
+      DEFAULT_RATE_LIMIT: "${DEFAULT_RATE_LIMIT:-120/minute}"
+      # Per-IP throttle for POST /ingest (public). Internal bridge traffic
+      # is exempt. See api/ingest_throttle.py.
+      INGEST_MIN_INTERVAL_SECONDS: "${INGEST_MIN_INTERVAL_SECONDS:-60}"
+      INGEST_DAILY_CAP: "${INGEST_DAILY_CAP:-20}"
+      # Public page copy: inbound address shown in the top banner and the
+      # attribution footer. Set OWNER_URL to a LinkedIn/GitHub/site URL to
+      # turn the name into a link (leave blank for plain text).
+      DEMO_INBOUND_ADDRESS: "${DEMO_INBOUND_ADDRESS:-demo@mailtest.justfortesting.xyz}"
+      OWNER_NAME: "${OWNER_NAME:-Justin Willmore}"
+      OWNER_URL: "${OWNER_URL:-https://www.linkedin.com/in/justin-willmore-7bb87950/}"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    restart: unless-stopped
+    #healthcheck:
+    #  test: ["CMD-SHELL", "nc -z localhost 8080 || exit 1"]
+    #  interval: 30s
+    #  timeout: 5s
+    #  retries: 5
+    #  start_period: 40s
+
+  seeder:
+    # Reuses the api image so it has access to models, analyzer, and DB session.
+    # Truncates `test_emails` and reloads the curated set under /app/seed_emails
+    # on startup and every UTC midnight. See api/seed_and_reset.py.
+    image: mailtest-api
+    container_name: mailtest-seeder
+    command: ["python", "seed_and_reset.py", "--daemon"]
+    environment:
+      DATABASE_URL: postgresql://mailtest:mailtest@db:5432/mailtest
+      SEED_DIR: /app/seed_emails
+    depends_on:
+      - db
+      - api
+    restart: unless-stopped
+
+  smtp:
+    build: ./smtp
+    container_name: mailtest-smtp
+    environment:
+      API_BASE_URL: http://api:8080
+    ports:
+      - "2525:2525"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  smtp-relay:
+    image: boky/postfix
+    restart: unless-stopped
+    hostname: mailtest.justfortesting.xyz
+    environment:
+      - ALLOW_EMPTY_SENDER_DOMAINS=1
+    volumes:
+      - ./relay:/etc/postfix
+    ports:
+      - "1025:25"   # Send test mail here
+    depends_on:
+      - email-bridge
+    networks:
+      - default
+
+  email-bridge:
+    # Host network during build: avoids pip "Temporary failure in name resolution" when
+    # Docker's build network DNS is broken (common on minimal VPS images).
+    build:
+      context: ./bridge
+      network: host
+    restart: unless-stopped
+    environment:
+      INGEST_URL: http://api:8080/ingest
+      QUEUE_DIR: /app/queue
+      RETRY_INTERVAL_SECONDS: "300"
+      MAX_RETRY_WINDOW_SECONDS: "1200"
+      # Simulator local-parts: check@, demo@, complaint@, bounce@ (see bridge/bridge.py)
+      MAILTEST_DOMAIN: mailtest.justfortesting.xyz
+      # Global flood cap at the bridge: caps *all* SMTP intake across every
+      # peer. Cap-hits return SMTP 451 so legit senders queue and retry.
+      # Tune BRIDGE_RATE_CAP down during an active abuse event.
+      BRIDGE_RATE_CAP: "${BRIDGE_RATE_CAP:-30}"
+      BRIDGE_RATE_WINDOW_SECONDS: "${BRIDGE_RATE_WINDOW_SECONDS:-60}"
+    ports:
+      - "10025:10025"
+    volumes:
+      - bridge-queue:/app/queue
+    networks:
+      - default
+
+volumes:
+  db-data:
+  bridge-queue:

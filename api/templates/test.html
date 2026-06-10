@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test {{ test.id }}</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card: rgba(255,255,255,0.06);
+      --card2: rgba(255,255,255,0.03);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.65);
+      --border: rgba(255,255,255,0.12);
+      --green: #42f59b;
+      --yellow: #ffd166;
+      --red: #ef476f;
+      --blue: #4cc9f0;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px;
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(76,201,240,0.18), transparent),
+                  radial-gradient(1200px 700px at 90% 10%, rgba(239,71,111,0.18), transparent),
+                  var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+      line-height: 1.35;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .topbar { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+    .title { margin: 0; font-size: 22px; letter-spacing: 0.2px; }
+    .subtitle { margin: 6px 0 0; color: var(--muted); }
+    .subtitleRow { margin-top: 4px; }
+    .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-top: 18px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .card { border: 1px solid var(--border); background: var(--card); border-radius: 14px; padding: 16px; }
+    .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .scoreRow { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .bigScore { font-size: 34px; margin: 0; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--card2); padding: 8px 10px; border-radius: 999px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+    .grade { font-weight: 700; color: var(--text); }
+    .kvs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+    .kv { border: 1px solid var(--border); background: var(--card2); border-radius: 12px; padding: 10px; }
+    .kv .k { color: var(--muted); font-size: 12px; }
+    .kv .v { margin-top: 6px; font-family: var(--mono); font-size: 13px; }
+    .warnBox { margin-top: 12px; border: 1px solid rgba(255, 209, 102, 0.35); background: rgba(255, 209, 102, 0.08); padding: 12px; border-radius: 12px; color: rgba(255,255,255,0.9); }
+    .warnBox strong { color: var(--yellow); }
+    .section { margin-top: 18px; }
+    details { border: 1px solid var(--border); background: var(--card); border-radius: 14px; padding: 12px 14px; }
+    details + details { margin-top: 12px; }
+    summary { cursor: pointer; color: var(--text); font-weight: 650; }
+    summary small { color: var(--muted); font-weight: 400; margin-left: 8px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: rgba(0,0,0,0.25); border: 1px solid var(--border); padding: 12px; border-radius: 12px; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--border); padding: 8px 8px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+    td { font-family: var(--mono); font-size: 12.5px; }
+    .muted { color: var(--muted); }
+    .btnRow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--card2); padding: 10px 12px; border-radius: 12px; color: var(--text); }
+    .btn:hover { background: rgba(255,255,255,0.06); text-decoration: none; }
+    .miniGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+    .miniCard { border: 1px solid var(--border); background: var(--card2); border-radius: 12px; padding: 10px; }
+    .miniCard .name { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .miniCard .score { margin-top: 6px; font-family: var(--mono); font-size: 13px; }
+    .badge { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; font-size: 11px; font-family: var(--mono); }
+    .status-pass { color: var(--green); border-color: rgba(66,245,155,0.35); background: rgba(66,245,155,0.08); }
+    .status-warn { color: var(--yellow); border-color: rgba(255,209,102,0.35); background: rgba(255,209,102,0.08); }
+    .status-fail { color: var(--red); border-color: rgba(239,71,111,0.35); background: rgba(239,71,111,0.1); }
+    .status-info { color: var(--blue); border-color: rgba(76,201,240,0.35); background: rgba(76,201,240,0.1); }
+    .score-good { color: var(--green); }
+    .score-mid { color: var(--yellow); }
+    .score-low { color: var(--red); }
+    .siteFoot {
+      margin: 40px 0 0;
+      padding: 16px 0 8px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.7;
+    }
+    .siteFoot a { color: var(--blue); }
+    .adminBtn {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .adminBtn.is-active {
+      color: var(--green);
+      border-color: rgba(66,245,155,0.45);
+      background: rgba(66,245,155,0.08);
+    }
+    .redactedBox {
+      border: 1px dashed rgba(255,209,102,0.45);
+      background: rgba(255,209,102,0.06);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--muted);
+    }
+    .redactedBox .btn { margin-top: 2px; }
+    /* Redirect-chain tracer */
+    .traceBtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--text);
+      padding: 4px 9px;
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      cursor: pointer;
+    }
+    .traceBtn:hover { background: rgba(255,255,255,0.06); }
+    .traceBtn[disabled] { opacity: 0.55; cursor: progress; }
+    .traceRow td { background: rgba(0,0,0,0.18); }
+    .traceWrap {
+      border: 1px solid var(--border);
+      background: var(--card2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 4px 0 2px;
+    }
+    .traceMeta {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+    }
+    .traceTable { width: 100%; }
+    .traceTable th, .traceTable td { padding: 6px 8px; font-size: 12px; }
+    .traceTable td.step { width: 28px; text-align: right; color: var(--muted); }
+    .traceTable td.code { width: 64px; }
+    .traceTable td.url {
+      word-break: break-all;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .codeChip {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 11px;
+      border: 1px solid var(--border);
+    }
+    .code-2xx { color: var(--green); border-color: rgba(66,245,155,0.35); background: rgba(66,245,155,0.08); }
+    .code-3xx { color: var(--yellow); border-color: rgba(255,209,102,0.35); background: rgba(255,209,102,0.08); }
+    .code-4xx, .code-5xx { color: var(--red); border-color: rgba(239,71,111,0.35); background: rgba(239,71,111,0.10); }
+    .code-err { color: var(--red); border-color: rgba(239,71,111,0.35); background: rgba(239,71,111,0.10); }
+    .cookieIcon { font-size: 11px; }
+    .tlsWarn {
+      color: var(--yellow);
+      border: 1px solid rgba(255,209,102,0.45);
+      background: rgba(255,209,102,0.10);
+      border-radius: 999px;
+      padding: 1px 7px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      margin-left: 6px;
+    }
+    .traceErr {
+      color: var(--red);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {# `deliverability` is passed in from the route; it is either the raw
+       stored value (admin / non-demo) or a PII-redacted deep copy (demo
+       visitor). We deliberately never read `test.deliverability` directly
+       below so the demo redaction can never be bypassed by an old
+       template reference. #}
+    {% set deliverability = deliverability or {} %}
+    {% set demo_viewer = demo_viewer if demo_viewer is defined else false %}
+    {% set facts = deliverability.facts if deliverability.facts else {} %}
+    {% set header_facts = facts.get('header_facts', {}) %}
+    {% set from_name = header_facts.get('from_name') %}
+    {% set content = facts.get('content_metrics', {}) %}
+    {% set auth = facts.get('auth_results', test.auth_results or {}) %}
+    {% set auth_details = facts.get('auth_details', {}) %}
+    {% set platform = facts.get('platform', {}) %}
+    {% set checks = deliverability.checks if deliverability.checks else [] %}
+    {% set categories = deliverability.categories if deliverability.categories else {} %}
+    {% set alignment = auth_details.get('alignment', {}) %}
+    {% set score_value = deliverability.score if deliverability else 0 %}
+
+    <div class="topbar">
+      <div>
+        <h1 class="title">Test {{ test.id }}</h1>
+        <div class="subtitle">
+          <div class="subtitleRow">
+            <span class="muted"><b><u>From</u></b>:</span>
+            <span>{{ from_name or '(none)' }}</span>
+          </div>
+          <div class="subtitleRow">
+            <span class="muted"><b><u>Subject</u></b>:</span>
+            <span>{{ test.subject or '(none)' }}</span>
+          </div>
+          <div class="subtitleRow">
+            <span class="muted"><b><u>Time</u></b>:</span>
+            <span>{{ test.created_at }}</span>
+          </div>
+          <div class="subtitleRow">
+            <span class="muted"><b><u>Platform</u></b>:</span>
+            <span>{{ platform.get('name', 'Unknown') }}{% if platform.get('confidence') %} ({{ platform.get('confidence') }}%){% endif %}</span>
+          </div>
+        </div>
+      </div>
+      <div class="btnRow">
+        <a
+          class="btn"
+          href="/export/{{ test.id }}"
+          download="email-{{ test.id }}.json"
+          title="Downloads the redacted demo-safe JSON (envelope-from masked; raw message and headers replaced with placeholders)."
+        >📥 Export (redacted)</a>
+        <button
+          class="btn"
+          id="exportAdminBtn"
+          type="button"
+          title="Downloads the full JSON with no redactions. Requires Admin to be unlocked."
+        >📥 Export (full, admin)</button>
+        <button class="btn adminBtn" id="adminBtn" type="button" title="Unlock destructive actions with your admin key">Admin</button>
+        <button class="btn" id="reanalyzeBtn" type="button">↻ Reanalyze this test</button>
+        <a class="btn" href="/ui/tests">← Back</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>At a glance</h3>
+        <div class="scoreRow">
+          <p class="bigScore {% if score_value >= 80 %}score-good{% elif score_value >= 60 %}score-mid{% else %}score-low{% endif %}">
+            {{ score_value }}/100
+          </p>
+          <span class="pill">
+            <span class="muted">Grade</span>
+            <span class="grade">{{ deliverability.grade if deliverability else '?' }}</span>
+          </span>
+        </div>
+
+        {% if deliverability and deliverability.warnings %}
+          <div class="warnBox">
+            <strong>Warnings</strong>
+            <div style="margin-top: 6px;">{{ deliverability.warnings|join(' • ') }}</div>
+          </div>
+        {% else %}
+          <div class="warnBox" style="border-color: rgba(66,245,155,0.25); background: rgba(66,245,155,0.06);">
+            <strong style="color: var(--green);">No warnings</strong>
+            <div style="margin-top: 6px;" class="muted">Nothing notable was flagged by current heuristics.</div>
+          </div>
+        {% endif %}
+
+        <div class="kvs">
+          <div class="kv">
+            <div class="k">Auth</div>
+            <div class="v">SPF={{ auth.get('spf', 'none') }}, DKIM={{ auth.get('dkim', 'none') }}, DMARC={{ auth.get('dmarc', 'none') }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Platform</div>
+            <div class="v">{{ platform.get('name', 'Unknown') }}{% if platform.get('reason') %} • {{ platform.get('reason') }}{% endif %}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Links / Images</div>
+            <div class="v">{{ facts.get('total_links', test.total_links|default(0))|default(0) }} links • {{ facts.get('total_images', test.total_images|default(0))|default(0) }} images</div>
+          </div>
+          <div class="kv">
+            <div class="k">URL density</div>
+            <div class="v">{{ content.get('url_density_per_1k_chars', 'n/a') }} / 1k chars</div>
+          </div>
+          <div class="kv">
+            <div class="k">Image-to-text ratio</div>
+            <div class="v">{{ content.get('image_to_text_ratio', 'n/a') }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">From → Return-Path</div>
+            <div class="v">{{ header_facts.get('from_domain', 'n/a') }} → {{ header_facts.get('return_path_domain', 'n/a') }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Message-ID / Date</div>
+            <div class="v">
+              {{ 'present' if header_facts.get('has_message_id') else 'missing' }} •
+              {{ 'present' if header_facts.get('has_date') else 'missing' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Top reasons</h3>
+        {% if deliverability and deliverability.reasons %}
+          <table>
+            <thead>
+              <tr>
+                <th>Severity</th>
+                <th>Delta</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in deliverability.reasons %}
+                {% if loop.index <= 8 %}
+                  <tr>
+                    <td>{{ r.severity }}</td>
+                    <td>{{ r.delta }}</td>
+                    <td style="font-family: inherit;">{{ r.message }}</td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="muted" style="margin-top: 10px;">Showing first 8 scoring events.</div>
+        {% else %}
+          <div class="muted">No structured reasons available for this email yet.</div>
+        {% endif %}
+
+        {% if categories %}
+          <div class="miniGrid">
+            {% for category, data in categories.items() %}
+              <div class="miniCard">
+                <div class="name">{{ category }}</div>
+                <div class="score">
+                  score={{ data.get('score', 0) }} | impact={{ data.get('impact', 0) }}
+                </div>
+                {% set totals = data.get('totals', {}) %}
+                <div style="margin-top: 6px;" class="muted">
+                  pass={{ totals.get('pass', 0) }} • warn={{ totals.get('warn', 0) }} • fail={{ totals.get('fail', 0) }} • info={{ totals.get('info', 0) }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="section">
+      <details open>
+        <summary>Authentication deep-dive <small>SPF, DKIM, DMARC, alignment matrix</small></summary>
+        {% if auth_details %}
+          {% set spf_d = auth_details.get('spf', {}) %}
+          {% set dkim_d = auth_details.get('dkim', {}) %}
+          {% set dmarc_d = auth_details.get('dmarc', {}) %}
+          <h4 style="margin: 12px 0 8px;">SPF</h4>
+          <table>
+            <tbody>
+              <tr><th>Result</th><td>{{ spf_d.get('result', auth.get('spf', 'none')) }}</td></tr>
+              <tr><th>Evaluated domain</th><td>{{ spf_d.get('domain', 'n/a') }}</td></tr>
+              <tr><th>Envelope-From</th><td>{{ spf_d.get('envelope_from', 'n/a') }}</td></tr>
+              <tr><th>Envelope source</th><td>{{ spf_d.get('envelope_from_source', header_facts.get('envelope_from_source', 'n/a')) }}</td></tr>
+              <tr><th>Sender IP</th><td>{{ spf_d.get('sender_ip', 'n/a') }}</td></tr>
+              <tr><th>Lookup estimate</th><td>{{ spf_d.get('lookup_estimate', 'n/a') }}</td></tr>
+              <tr><th>Record</th><td>{{ spf_d.get('record', '(not found)') }}</td></tr>
+              {% if spf_d.get('pass_via') == 'infrastructure' %}
+              <tr><th>SPF pass context</th><td>Connecting MTA (<span class="muted">{{ spf_d.get('infrastructure_domain', '') }}</span>) authorizes the sender IP; Header From domain record above may still list <code>~all</code> without that IP.</td></tr>
+              <tr><th>MTA domain SPF</th><td>{{ spf_d.get('infrastructure_record', '(not found)') }}</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+
+          <h4 style="margin: 16px 0 8px;">DKIM</h4>
+          {% if dkim_d.get('signatures') %}
+            <table>
+              <thead>
+                <tr><th>#</th><th>Domain (d=)</th><th>Selector (s=)</th><th>Result</th><th>Mode</th><th>Reason</th></tr>
+              </thead>
+              <tbody>
+                {% for sig in dkim_d.get('signatures', []) %}
+                  <tr>
+                    <td>{{ sig.get('index', 0) }}</td>
+                    <td>{{ sig.get('domain', 'n/a') }}</td>
+                    <td>{{ sig.get('selector', 'n/a') }}</td>
+                    <td>{{ sig.get('result', auth.get('dkim', 'none')) }}</td>
+                    <td>{{ sig.get('mode', 'n/a') }}</td>
+                    <td>{{ sig.get('reason', '') or '-' }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p class="muted"><em>No DKIM signatures parsed.</em></p>
+          {% endif %}
+
+          <h4 style="margin: 16px 0 8px;">DMARC</h4>
+          <table>
+            <tbody>
+              <tr><th>Result</th><td>{{ dmarc_d.get('result', auth.get('dmarc', 'none')) }}</td></tr>
+              <tr><th>From domain</th><td>{{ dmarc_d.get('from_domain', 'n/a') }}</td></tr>
+              <tr><th>DMARC TXT name</th><td>{% if dmarc_d.get('record') %}{% if dmarc_d.get('record_source') == 'authentication-results' %}<span class="muted">inferred from Authentication-Results</span>{% if dmarc_d.get('record_domain') %} (header.from {{ dmarc_d.get('record_domain') }}){% endif %}{% else %}_dmarc.{{ dmarc_d.get('record_domain') or dmarc_d.get('from_domain', '') }}{% endif %}{% elif dmarc_d.get('from_domain') %}<span class="muted">none (searched From domain and parent names per RFC 7489)</span>{% else %}n/a{% endif %}</td></tr>
+              <tr><th>Policy</th><td>{{ dmarc_d.get('policy', 'n/a') }}</td></tr>
+              <tr><th>adkim / aspf</th><td>{{ dmarc_d.get('adkim', 'r') }} / {{ dmarc_d.get('aspf', 'r') }}</td></tr>
+              <tr><th>Record</th><td>{{ dmarc_d.get('record', '(not found)') }}</td></tr>
+            </tbody>
+          </table>
+
+          <h4 style="margin: 16px 0 8px;">Alignment matrix</h4>
+          <table>
+            <tbody>
+              <tr><th>Header From</th><td>{{ alignment.get('from_domain', 'n/a') }}</td></tr>
+              <tr><th>Envelope domain</th><td>{{ alignment.get('envelope_domain', 'n/a') }}</td></tr>
+              <tr><th>DKIM domains</th><td>{{ alignment.get('dkim_domains', [])|join(', ') or '(none)' }}</td></tr>
+              <tr><th>SPF aligned</th><td>{{ 'yes' if alignment.get('spf_aligned') else 'no' }}</td></tr>
+              <tr><th>DKIM aligned</th><td>{{ 'yes' if alignment.get('dkim_aligned') else 'no' }}</td></tr>
+              <tr><th>DMARC aligned</th><td>{{ 'yes' if alignment.get('dmarc_aligned') else 'no' }}</td></tr>
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted">No authentication details available for this message yet.</p>
+        {% endif %}
+      </details>
+
+      <details open>
+        <summary>Checks <small>full structured check engine output</small></summary>
+        {% if checks %}
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Impact</th>
+                <th>Message</th>
+                <th>Fix</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in checks %}
+                {% set status_class = 'status-' + (c.get('status', 'info')) %}
+                <tr>
+                  <td>{{ c.get('id') }}</td>
+                  <td>{{ c.get('category') }}</td>
+                  <td><span class="badge {{ status_class }}">{{ c.get('status', 'info') }}</span></td>
+                  <td>{{ c.get('impact', 0) }}</td>
+                  <td style="font-family: inherit;">{{ c.get('message', '') }}</td>
+                  <td style="font-family: inherit;">{{ c.get('fix', '') }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="muted" style="margin-top: 10px;">Showing {{ checks|length }} checks.</div>
+        {% else %}
+          <p class="muted">No checks stored for this message.</p>
+        {% endif %}
+      </details>
+
+      <details open>
+        <summary>Details: scoring reasons <small>full list + per-reason data</small></summary>
+        {% if deliverability and deliverability.reasons %}
+          <pre>{{ deliverability.reasons | tojson(indent=2) }}</pre>
+        {% else %}
+          <p class="muted">No reasons stored.</p>
+        {% endif %}
+      </details>
+
+      <details>
+        <summary>Details: facts <small>normalized metrics used by scoring</small></summary>
+        <pre>{{ facts | tojson(indent=2) }}</pre>
+      </details>
+
+      <details>
+        <summary>Checks JSON <small>raw checks payload</small></summary>
+        <pre>{{ checks | tojson(indent=2) }}</pre>
+      </details>
+
+      <details>
+        <summary>Headers <small>all parsed headers</small></summary>
+        {% if demo_viewer %}
+          <div class="redactedBox" id="headersRedacted">
+            <p class="muted" style="margin: 0 0 10px;">
+              Full parsed headers are hidden in demo mode to protect contributors&rsquo; PII.
+              Unlock <b>Admin</b> (top-right), then use the button below to load them.
+            </p>
+            <button class="btn" type="button" id="loadHeadersBtn">Load full headers (admin)</button>
+            <div class="muted" id="loadHeadersStatus" style="margin-top: 8px;"></div>
+          </div>
+          <pre id="headersOutput" style="display: none;"></pre>
+        {% else %}
+          <pre>{{ (test.parsed_headers or {}) | tojson(indent=2) }}</pre>
+        {% endif %}
+      </details>
+
+      <details>
+        <summary>MIME structure <small>parts overview</small></summary>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Content-Type</th>
+              <th>Disposition</th>
+              <th>Filename</th>
+              <th>Size</th>
+              <th>Body?</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for part in test.mime_tree %}
+              <tr>
+                <td>{{ part.index }}</td>
+                <td>{{ part.content_type }}</td>
+                <td>{{ part.disposition or '' }}</td>
+                <td>{{ part.filename or '' }}</td>
+                <td>{{ "{:,}".format(part.size) }}</td>
+                <td>{{ '✅' if part.is_body else '' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+
+      <details>
+        <summary>Links & images <small>extracted from HTML</small></summary>
+        <h4 style="margin: 12px 0 8px;">Links</h4>
+        {% if test.links %}
+          <p class="muted" style="margin: 0 0 10px; font-size: 12.5px;">
+            Click <b>Trace</b> on any link to follow its redirect chain (HTTP
+            status + final URL). Bodies are never downloaded, and private /
+            loopback / cloud-metadata destinations are blocked.
+          </p>
+          <table id="linksTable">
+            <thead>
+              <tr>
+                <th>Domain</th>
+                <th>Text</th>
+                <th>Params</th>
+                <th>Tracker</th>
+                <th>Redirects</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for link in test.links %}
+                <tr>
+                  <td>{{ link.domain or '(relative)' }}</td>
+                  <td style="font-family: inherit;">
+                    <a href="{{ link.href }}" target="_blank" rel="noopener nofollow noreferrer">{{ link.text }}</a>
+                  </td>
+                  <td>{{ 'yes' if link.has_params else 'no' }}</td>
+                  <td>{{ 'yes' if link.is_tracker else 'no' }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="traceBtn"
+                      data-url="{{ link.href }}"
+                      title="Follow HTTP redirects for this URL (HEAD-only, body never read)"
+                    >↪ Trace</button>
+                  </td>
+                </tr>
+                <tr class="traceRow" style="display: none;">
+                  <td colspan="5">
+                    <div class="traceWrap"></div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted"><em>No links found (no HTML body?)</em></p>
+        {% endif %}
+
+        <h4 style="margin: 16px 0 8px;">Images</h4>
+        {% if test.images %}
+          <table>
+            <thead>
+              <tr>
+                <th>Domain</th>
+                <th>Src (truncated)</th>
+                <th>Type</th>
+                <th>Dimensions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for img in test.images %}
+                <tr>
+                  <td>{{ img.domain or '(relative)' }}</td>
+                  <td>{{ img.src[:80] }}{% if img.src|length > 80 %}...{% endif %}</td>
+                  <td>
+                    {% if img.is_cid %}cid{% elif img.is_relative %}relative{% else %}external{% endif %}
+                  </td>
+                  <td>{{ img.width }}×{{ img.height }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted"><em>No images found</em></p>
+        {% endif %}
+      </details>
+
+      <details>
+        <summary>Raw email <small>first 2000 chars</small></summary>
+        {% if demo_viewer %}
+          <div class="redactedBox" id="rawRedacted">
+            <p class="muted" style="margin: 0 0 10px;">
+              The raw message is hidden in demo mode to protect contributors&rsquo; PII.
+              Unlock <b>Admin</b> (top-right), then use the button below to load it.
+            </p>
+            <button class="btn" type="button" id="loadRawBtn">Load raw message (admin)</button>
+            <div class="muted" id="loadRawStatus" style="margin-top: 8px;"></div>
+          </div>
+          <pre id="rawOutput" style="display: none;"></pre>
+        {% else %}
+          <pre>{{ test.raw_message[:2000] }}{% if test.raw_message|length > 2000 %}...{% endif %}</pre>
+        {% endif %}
+      </details>
+    </div>
+    <footer class="siteFoot">
+      <div>
+        Built by
+        {% if owner_url %}
+          <a href="{{ owner_url }}" target="_blank" rel="noopener noreferrer">{{ owner_name }}</a>
+        {% else %}
+          {{ owner_name }}
+        {% endif %}
+        &middot; public demo &middot; beta
+      </div>
+      <div>Seed data and all submissions reset daily at 00:00 UTC.</div>
+    </footer>
+  </div>
+  <script>
+    // ------- Admin unlock (sessionStorage-scoped; cleared on tab close) -------
+    const ADMIN_STORAGE_KEY = "mailtest.adminKey";
+
+    function getAdminKey() {
+      try { return sessionStorage.getItem(ADMIN_STORAGE_KEY) || ""; }
+      catch (e) { return ""; }
+    }
+
+    function setAdminKey(v) {
+      try {
+        if (v) sessionStorage.setItem(ADMIN_STORAGE_KEY, v);
+        else sessionStorage.removeItem(ADMIN_STORAGE_KEY);
+      } catch (e) { /* ignore */ }
+    }
+
+    function authHeaders() {
+      const k = getAdminKey();
+      return k ? { "X-Admin-Key": k } : {};
+    }
+
+    function refreshAdminUi() {
+      const btn = document.getElementById("adminBtn");
+      if (!btn) return;
+      const active = !!getAdminKey();
+      btn.classList.toggle("is-active", active);
+      btn.textContent = active ? "Admin \u2713" : "Admin";
+      btn.title = active
+        ? "Admin mode active for this tab. Click to clear."
+        : "Unlock destructive actions with your admin key.";
+    }
+
+    async function validateAdminKey(key) {
+      try {
+        const res = await fetch("/admin/ping", {
+          method: "GET",
+          headers: { "X-Admin-Key": key },
+        });
+        return res.ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    const adminBtn = document.getElementById("adminBtn");
+    if (adminBtn) {
+      adminBtn.addEventListener("click", async () => {
+        if (getAdminKey()) {
+          setAdminKey("");
+          refreshAdminUi();
+          return;
+        }
+        const entered = window.prompt("Admin key:", "");
+        if (entered === null) return;
+        const trimmed = entered.trim();
+        if (!trimmed) return;
+        adminBtn.disabled = true;
+        const ok = await validateAdminKey(trimmed);
+        adminBtn.disabled = false;
+        if (!ok) {
+          alert("Admin key rejected. Nothing saved.");
+          return;
+        }
+        setAdminKey(trimmed);
+        refreshAdminUi();
+      });
+      refreshAdminUi();
+    }
+
+    // ------- Admin-gated on-demand reveal of headers + raw message -------
+    // These buttons only exist on the page when the server rendered in
+    // demo-viewer mode. They call an admin-only endpoint with the key
+    // stashed in sessionStorage; if admin isn't unlocked yet, prompt the
+    // user to click Admin first rather than silently failing.
+    let _adminRawCache = null;
+
+    async function fetchAdminRaw(statusEl) {
+      if (_adminRawCache) return _adminRawCache;
+      if (!getAdminKey()) {
+        if (statusEl) {
+          statusEl.textContent = "Click Admin (top-right) and enter your key first.";
+        }
+        return null;
+      }
+      try {
+        const res = await fetch("/admin/tests/{{ test.id }}/raw", {
+          method: "GET",
+          headers: { ...authHeaders() },
+        });
+        if (res.status === 403) {
+          if (statusEl) statusEl.textContent = "Admin key was rejected. Unlock Admin again.";
+          setAdminKey("");
+          refreshAdminUi();
+          return null;
+        }
+        if (!res.ok) {
+          if (statusEl) statusEl.textContent = "Request failed (" + res.status + "). Try again.";
+          return null;
+        }
+        _adminRawCache = await res.json();
+        return _adminRawCache;
+      } catch (err) {
+        if (statusEl) statusEl.textContent = "Network error. Try again.";
+        return null;
+      }
+    }
+
+    const loadHeadersBtn = document.getElementById("loadHeadersBtn");
+    if (loadHeadersBtn) {
+      const output = document.getElementById("headersOutput");
+      const status = document.getElementById("loadHeadersStatus");
+      const box = document.getElementById("headersRedacted");
+      loadHeadersBtn.addEventListener("click", async () => {
+        loadHeadersBtn.disabled = true;
+        loadHeadersBtn.textContent = "Loading...";
+        status.textContent = "";
+        const data = await fetchAdminRaw(status);
+        loadHeadersBtn.disabled = false;
+        loadHeadersBtn.textContent = "Load full headers (admin)";
+        if (!data) return;
+        output.textContent = JSON.stringify(data.parsed_headers || {}, null, 2);
+        output.style.display = "block";
+        if (box) box.style.display = "none";
+      });
+    }
+
+    const loadRawBtn = document.getElementById("loadRawBtn");
+    if (loadRawBtn) {
+      const output = document.getElementById("rawOutput");
+      const status = document.getElementById("loadRawStatus");
+      const box = document.getElementById("rawRedacted");
+      loadRawBtn.addEventListener("click", async () => {
+        loadRawBtn.disabled = true;
+        loadRawBtn.textContent = "Loading...";
+        status.textContent = "";
+        const data = await fetchAdminRaw(status);
+        loadRawBtn.disabled = false;
+        loadRawBtn.textContent = "Load raw message (admin)";
+        if (!data) return;
+        const raw = data.raw_message || "";
+        const preview = raw.length > 2000 ? raw.slice(0, 2000) + "..." : raw;
+        output.textContent = preview;
+        output.style.display = "block";
+        if (box) box.style.display = "none";
+      });
+    }
+
+    const reanalyzeBtn = document.getElementById("reanalyzeBtn");
+    if (reanalyzeBtn) {
+      const originalReanalyzeLabel = reanalyzeBtn.textContent;
+      const resetReanalyzeBtn = () => {
+        reanalyzeBtn.disabled = false;
+        reanalyzeBtn.textContent = originalReanalyzeLabel;
+      };
+      reanalyzeBtn.addEventListener("click", async () => {
+        reanalyzeBtn.disabled = true;
+        reanalyzeBtn.textContent = "Reanalyzing...";
+        try {
+          const res = await fetch("/tests/{{ test.id }}/reanalyze", {
+            method: "POST",
+            headers: { ...authHeaders() },
+          });
+          if (res.status === 403) {
+            if (getAdminKey()) {
+              alert("Admin key was rejected. Please unlock Admin again.");
+              setAdminKey("");
+              refreshAdminUi();
+            } else {
+              alert("Reanalyze is admin-only in demo mode. Click the Admin button (top-right) and enter your admin key, then try again.");
+            }
+            resetReanalyzeBtn();
+            return;
+          }
+          if (!res.ok) {
+            let detail = "HTTP " + res.status;
+            try {
+              const j = await res.json();
+              if (j && j.detail) detail = j.detail;
+            } catch (e) { /* ignore */ }
+            alert("Reanalyze failed: " + detail);
+            resetReanalyzeBtn();
+            return;
+          }
+          window.location.reload();
+        } catch (err) {
+          alert("Reanalyze failed: network error.");
+          resetReanalyzeBtn();
+        }
+      });
+    }
+
+    // ------- Redirect chain tracer (per-link) -------
+    function codeChipClass(status) {
+      if (status === null || status === undefined) return "code-err";
+      if (status >= 200 && status < 300) return "code-2xx";
+      if (status >= 300 && status < 400) return "code-3xx";
+      if (status >= 400 && status < 500) return "code-4xx";
+      return "code-5xx";
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function renderTrace(result) {
+      const meta = [
+        `${result.hop_count} hop${result.hop_count === 1 ? "" : "s"}`,
+        `${result.total_elapsed_ms} ms`,
+        result.redirected ? "redirected" : "no redirects",
+      ];
+      if (result.any_tls_unverified) {
+        meta.push("\u26A0 one or more hops have an incomplete TLS chain");
+      }
+      const rows = (result.hops || [])
+        .map((h) => {
+          let codeHtml;
+          if (h.error) {
+            codeHtml = `<span class="codeChip code-err" title="${escapeHtml(h.error)}">ERR</span>`;
+          } else {
+            codeHtml = `<span class="codeChip ${codeChipClass(h.status)}" title="${escapeHtml(h.reason || "")}">${h.status}</span>`;
+          }
+          const cookie = h.set_cookie ? '<span class="cookieIcon" title="Set-Cookie header on this hop">&#x1F36A;</span> ' : "";
+          const methodLabel = h.method && h.method !== "-" ? `<span class="muted">${escapeHtml(h.method)}</span> ` : "";
+          const tlsWarn = (h.tls_verified === false)
+            ? '<span class="tlsWarn" title="Server presented an incomplete or untrusted TLS chain. Redirect metadata only — identity of the TLS peer is not verified.">\u26A0 TLS not verified</span>'
+            : "";
+          const errLine = h.error
+            ? `<div class="traceErr">${escapeHtml(h.error)}</div>`
+            : "";
+          return (
+            `<tr>` +
+            `<td class="step">${h.step}</td>` +
+            `<td class="code">${codeHtml}</td>` +
+            `<td class="url">${cookie}${methodLabel}${escapeHtml(h.url)}${tlsWarn}${errLine}</td>` +
+            `</tr>`
+          );
+        })
+        .join("");
+      return (
+        `<div class="traceMeta">` +
+        meta.map((m) => `<span>${escapeHtml(m)}</span>`).join("") +
+        `</div>` +
+        `<table class="traceTable">` +
+        `<thead><tr><th>#</th><th>Code</th><th>URL</th></tr></thead>` +
+        `<tbody>${rows}</tbody>` +
+        `</table>`
+      );
+    }
+
+    document.querySelectorAll(".traceBtn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const url = btn.getAttribute("data-url");
+        const row = btn.closest("tr");
+        const next = row && row.nextElementSibling;
+        if (!next || !next.classList.contains("traceRow")) return;
+        const wrap = next.querySelector(".traceWrap");
+        if (!wrap) return;
+        if (next.style.display !== "none" && wrap.dataset.loaded === "1") {
+          next.style.display = "none";
+          btn.textContent = "\u21AA Trace";
+          return;
+        }
+        next.style.display = "";
+        wrap.innerHTML = '<div class="muted">Tracing\u2026</div>';
+        btn.disabled = true;
+        const originalLabel = btn.textContent;
+        btn.textContent = "Tracing\u2026";
+        try {
+          const res = await fetch("/util/trace?url=" + encodeURIComponent(url));
+          if (!res.ok) {
+            let detail = "HTTP " + res.status;
+            try {
+              const j = await res.json();
+              if (j && j.detail) detail = j.detail;
+            } catch (e) { /* ignore */ }
+            wrap.innerHTML = '<div class="traceErr">' + escapeHtml(detail) + '</div>';
+            return;
+          }
+          const result = await res.json();
+          wrap.innerHTML = renderTrace(result);
+          wrap.dataset.loaded = "1";
+          btn.textContent = "\u2715 Hide trace";
+          return;
+        } catch (err) {
+          wrap.innerHTML = '<div class="traceErr">Network error.</div>';
+        } finally {
+          btn.disabled = false;
+          if (btn.textContent === "Tracing\u2026") btn.textContent = originalLabel;
+        }
+      });
+    });
+
+    // ------- Admin (full, unredacted) export -------
+    // The sibling <a> link is a plain anchor and can't send custom headers,
+    // so it always hits /export/{id} unauthenticated and gets the demo-safe
+    // redacted JSON. This button uses fetch() to attach X-Admin-Key so the
+    // server returns the raw payload, then triggers a blob download.
+    const exportAdminBtn = document.getElementById("exportAdminBtn");
+    if (exportAdminBtn) {
+      const defaultLabel = exportAdminBtn.textContent;
+      exportAdminBtn.addEventListener("click", async () => {
+        if (!getAdminKey()) {
+          alert("Unlock Admin first (click the Admin button), then try again.");
+          return;
+        }
+        exportAdminBtn.disabled = true;
+        exportAdminBtn.textContent = "Preparing...";
+        try {
+          const res = await fetch("/export/{{ test.id }}", {
+            method: "GET",
+            headers: { ...authHeaders() },
+          });
+          if (res.status === 403) {
+            alert("Admin key was rejected. Please unlock Admin again.");
+            setAdminKey("");
+            refreshAdminUi();
+            return;
+          }
+          if (!res.ok) {
+            alert("Export failed (HTTP " + res.status + ").");
+            return;
+          }
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "email-{{ test.id }}-full.json";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (err) {
+          alert("Export failed. Please try again.");
+        } finally {
+          exportAdminBtn.disabled = false;
+          exportAdminBtn.textContent = defaultLabel;
+        }
+      });
+    }
+  </script>
+</body>
+</html>

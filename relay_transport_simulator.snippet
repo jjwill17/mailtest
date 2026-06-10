@@ -1,0 +1,5 @@
+# Postfix transport additions (merge into relay/transport for Docker compose relay).
+# After editing the live transport file: postmap if your setup requires it, then reload Postfix.
+
+complaint@mailtest.justfortesting.xyz   relay:[email-bridge]:10025
+bounce@mailtest.justfortesting.xyz      relay:[email-bridge]:10025

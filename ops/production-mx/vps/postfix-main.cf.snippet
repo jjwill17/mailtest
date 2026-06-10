@@ -1,0 +1,27 @@
+# Append to /etc/postfix/main.cf on the VPS (or merge with postconf -e).
+# Assumes system Postfix, not Docker.
+
+# Public inbound SMTP
+inet_interfaces = all
+inet_protocols = ipv4
+
+# SMTP banner / HELO name (must match public DNS for this MX)
+myhostname = mailtest.justfortesting.xyz
+
+# Local delivery only for localhost (do NOT put the public domain here)
+mydestination = localhost.$myhostname, localhost
+
+# Inbound mail for this domain is relayed using transport_maps
+relay_domains = mailtest.justfortesting.xyz
+
+transport_maps = hash:/etc/postfix/transport
+
+mynetworks = 127.0.0.0/8
+
+smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination
+smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination
+
+smtpd_tls_security_level = may
+smtp_tls_security_level = may
+
+message_size_limit = 26214400

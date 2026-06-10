@@ -1,0 +1,12 @@
+# VPS (209.141.48.115) — copy to /etc/wireguard/wg0.conf and chmod 600
+# Replace keys and IPs as needed.
+
+[Interface]
+Address = 10.200.0.1/24
+ListenPort = 51820
+PrivateKey = VPS_PRIVATE_KEY_HERE
+
+[Peer]
+# Home machine
+PublicKey = HOME_PUBLIC_KEY_HERE
+AllowedIPs = 10.200.0.2/32

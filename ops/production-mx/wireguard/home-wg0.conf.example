@@ -1,0 +1,13 @@
+# Home (Docker host) — path depends on distro; often /etc/wireguard/wg0.conf
+# Replace keys. Home must be able to reach VPS:51820/udp.
+
+[Interface]
+Address = 10.200.0.2/24
+PrivateKey = HOME_PRIVATE_KEY_HERE
+
+[Peer]
+# VPS
+PublicKey = VPS_PUBLIC_KEY_HERE
+Endpoint = 209.141.48.115:51820
+AllowedIPs = 10.200.0.1/32
+PersistentKeepalive = 25

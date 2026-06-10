@@ -1,0 +1,29 @@
+Return-Path: <noreply@weird-sender-host.example>
+Received: from mail-out.weird-sender-host.example (mail-out.weird-sender-host.example. [203.0.113.45])
+	by mx.google.com with ESMTPS id a1b2c3d4-5678efgh.42.2026.04.10.09.15.20
+	for <recipient@example.com>
+	(version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+	Fri, 10 Apr 2026 09:15:21 -0800 (PST)
+Received-SPF: fail (google.com: domain of noreply@weird-sender-host.example does not designate 203.0.113.45 as permitted sender) client-ip=203.0.113.45;
+Authentication-Results: mx.google.com;
+       spf=fail (google.com: domain of noreply@weird-sender-host.example does not designate 203.0.113.45 as permitted sender) smtp.mailfrom=noreply@weird-sender-host.example;
+       dkim=none;
+       dmarc=fail (p=REJECT sp=REJECT dis=REJECT) header.from=bigbank-support.example
+From: "BigBank Security" <no-reply@bigbank-support.example>
+To: recipient@example.com
+Subject: URGENT: Verify your account within 24 hours
+Date: Fri, 10 Apr 2026 09:15:18 -0800
+Message-ID: <CAFakeSpoof42@weird-sender-host.example>
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2 style="color: #c00;">Account Verification Required</h2>
+  <p>We've detected unusual activity on your account.</p>
+  <p>Please <a href="http://totally-legit-bigbank.example/verify?id=9a8c7b">click here to verify</a>
+     within 24 hours or your account will be suspended.</p>
+  <p>Thank you,<br>BigBank Security Team</p>
+</body>
+</html>

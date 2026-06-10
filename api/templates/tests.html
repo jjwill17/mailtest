@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mail Tests</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card: rgba(255,255,255,0.06);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.65);
+      --border: rgba(255,255,255,0.12);
+      --green: #42f59b;
+      --yellow: #ffd166;
+      --red: #ef476f;
+      --blue: #4cc9f0;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px;
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(76,201,240,0.18), transparent),
+                  radial-gradient(1200px 700px at 90% 10%, rgba(239,71,111,0.18), transparent),
+                  var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+      line-height: 1.35;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    h1 { margin: 0 0 14px; font-size: 22px; }
+    .filters {
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .input {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-size: 13px;
+    }
+    table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); background: var(--card); border-radius: 14px; overflow: hidden; }
+    th, td { border-bottom: 1px solid var(--border); padding: 10px 10px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+    td { font-family: var(--mono); font-size: 12.5px; }
+    .subject { font-family: inherit; }
+    .score { font-weight: 700; }
+    .gradePill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.18);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .actionBar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 12px;
+      padding: 10px 12px;
+      min-height: 52px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 120ms ease;
+      position: sticky;
+      top: 10px;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+    .actionBar.is-active { opacity: 1; pointer-events: auto; }
+    .actionBar .left { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+    .btnRow { display: flex; gap: 10px; }
+    .btn {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn:hover { background: rgba(255,255,255,0.08); }
+    .btnDanger {
+      border-color: rgba(239,71,111,0.45);
+      color: var(--red);
+      background: rgba(239,71,111,0.08);
+    }
+    .checkCell { width: 34px; text-align: center; }
+    .checkCell input { transform: scale(1.05); accent-color: var(--blue); cursor: pointer; }
+    .meta { color: var(--muted); font-size: 12px; margin: 0 0 10px; }
+    .pagination {
+      margin-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .pagerBtns { display: flex; gap: 8px; }
+    .chipRow { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-family: var(--mono);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .chip:hover { background: rgba(255,255,255,0.08); text-decoration: none; }
+    .chip.is-active { border-color: var(--blue); color: var(--blue); background: rgba(76,201,240,0.1); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      background: rgba(0,0,0,0.18);
+    }
+    .badge.sim { color: var(--yellow); border-color: rgba(255,209,102,0.45); background: rgba(255,209,102,0.08); }
+    .badge.arf { color: var(--blue); border-color: rgba(76,201,240,0.45); background: rgba(76,201,240,0.10); }
+    .heroCard {
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 0 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .heroCard .heroIcon { font-size: 22px; line-height: 1; }
+    .heroCard .heroMain { flex: 1; min-width: 240px; }
+    .heroCard .heroLead { font-size: 13.5px; }
+    .heroCard .heroAddress {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text);
+      background: rgba(76,201,240,0.08);
+      border: 1px solid rgba(76,201,240,0.35);
+      border-radius: 8px;
+      padding: 2px 8px;
+      margin-left: 4px;
+      min-width: 220px;
+      text-align: center;
+    }
+    .heroCard .addrMask {
+      letter-spacing: 3px;
+      color: var(--muted);
+      user-select: none;
+    }
+    .heroCard .addrLink {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: all;
+    }
+    .heroCard .addrLink:hover { text-decoration: underline; }
+    .heroCard .addrLink:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    .heroCard .heroAddress.copied {
+      border-color: rgba(66,245,155,0.55);
+      background: rgba(66,245,155,0.14);
+    }
+    .heroCard .heroCopyHint {
+      display: none;
+      color: var(--muted);
+      font-size: 12px;
+      font-family: var(--mono);
+      margin-top: 6px;
+    }
+    .heroCard .heroCopyHint.is-visible { display: block; }
+    .heroCard .heroCopyHint.copied { color: var(--green); }
+    .heroCard .heroHint { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+    .heroCard .copyBtn {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-family: var(--mono);
+      cursor: pointer;
+    }
+    .heroCard .copyBtn:hover { background: rgba(255,255,255,0.08); }
+    .heroCard .copyBtn.copied {
+      color: var(--green);
+      border-color: rgba(66,245,155,0.45);
+      background: rgba(66,245,155,0.08);
+    }
+    .siteFoot {
+      margin: 40px 0 0;
+      padding: 16px 0 8px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.7;
+    }
+    .siteFoot a { color: var(--blue); }
+    .pageHead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 14px;
+    }
+    .pageHead h1 { margin: 0; }
+    .adminBtn {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-family: var(--mono);
+      cursor: pointer;
+    }
+    .adminBtn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    .adminBtn.is-active {
+      color: var(--green);
+      border-color: rgba(66,245,155,0.45);
+      background: rgba(66,245,155,0.08);
+    }
+    @media (max-width: 900px) {
+      .filters { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="pageHead">
+      <h1>Mail Tests</h1>
+      <button
+        id="adminBtn"
+        class="adminBtn"
+        type="button"
+        title="Unlock destructive actions with your admin key"
+      >Admin</button>
+    </div>
+    <div class="heroCard">
+      <div class="heroIcon" aria-hidden="true">&#128236;</div>
+      <div class="heroMain">
+        <div class="heroLead">
+          Send a test email to
+          <span
+            id="demoAddrChip"
+            class="heroAddress"
+            data-addr-b64="{{ demo_inbound_address_b64 }}"
+          ><span class="addrMask" aria-hidden="true">&#9679;&#9679;&#9679;&#9679;&#9679;&#64;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;</span></span>
+        </div>
+        <div class="heroCopyHint" id="heroCopyHint">&#128203; Tap the address to copy it to your clipboard, then paste it into your email client.</div>
+        <div class="heroHint">
+          It&rsquo;ll appear in the list below within a few seconds with full SPF, DKIM, DMARC and content analysis.
+          Limited to 1 test per minute and 20 per day per visitor; all data resets daily at 00:00 UTC.
+        </div>
+      </div>
+      <button class="copyBtn" type="button" id="addrActionBtn" aria-label="Reveal demo address">Reveal address</button>
+    </div>
+    <noscript>
+      <div class="heroCard" style="border-color: rgba(255,209,102,0.45); background: rgba(255,209,102,0.06);">
+        <div class="heroIcon" aria-hidden="true">&#9888;</div>
+        <div class="heroMain">
+          <div class="heroLead">JavaScript is required to display the demo address.</div>
+          <div class="heroHint">This keeps the address out of the rendered HTML so email harvesters don&rsquo;t pick it up.</div>
+        </div>
+      </div>
+    </noscript>
+    <form class="filters" method="get" action="/ui/tests">
+      <div class="field">
+        <label for="q">Search (subject / From)</label>
+        <input class="input" id="q" name="q" value="{{ q }}" placeholder="invoice, welcome, sender name">
+      </div>
+      <div class="field">
+        <label for="domain">Sender domain</label>
+        <input class="input" id="domain" name="domain" value="{{ domain }}" placeholder="example.com">
+      </div>
+      <div class="btnRow">
+        <input type="hidden" name="page_size" value="{{ page_size }}">
+        <input type="hidden" name="source" value="{{ source_filter }}">
+        <button class="btn" type="submit">Apply filters</button>
+        <a class="btn" href="/ui/tests">Clear</a>
+      </div>
+    </form>
+    {% set source_chips = [
+      ('', 'All'),
+      ('simulator', 'Simulator'),
+      ('complaint', 'Complaint sim'),
+      ('arf', 'ARF'),
+      ('smtp', 'SMTP'),
+      ('postfix-pipe', 'Postfix pipe'),
+      ('manual', 'Manual')
+    ] %}
+    <div class="chipRow" role="tablist" aria-label="Filter by source">
+      {% for key, label in source_chips %}
+        {% set is_active = (source_filter == key) or (key == '' and not source_filter) %}
+        <a class="chip {% if is_active %}is-active{% endif %}"
+           href="/ui/tests?page_size={{ page_size }}&q={{ q|urlencode }}&domain={{ domain|urlencode }}{% if key %}&source={{ key }}{% endif %}">
+          {{ label }}
+        </a>
+      {% endfor %}
+    </div>
+    <p class="meta">{{ total_count }} matching test(s) • page {{ page }} / {{ total_pages }}</p>
+    <div class="actionBar" id="actionBar">
+      <div class="left"><span id="selectedCount">0</span> selected</div>
+      <div class="btnRow">
+        <button id="bulkExportBtn" class="btn" type="button">Export JSON</button>
+        <button id="bulkReanalyzeBtn" class="btn" type="button">Refresh selected</button>
+        <button id="bulkDeleteBtn" class="btn btnDanger" type="button">Delete selected</button>
+      </div>
+    </div>
+    <table>
+      <tr>
+        <th class="checkCell"><input id="selectAll" type="checkbox" aria-label="Select all tests"></th>
+        <th>ID</th>
+        <th>Platform</th>
+        <th>Score</th>
+        <th>From</th>
+        <th>Subject</th>
+        <th>Source</th>
+        <th>Time</th>
+        <th>View</th>
+      </tr>
+      {% for t in tests %}
+        {% set d = t.deliverability or {} %}
+        {% set score = d.get('score') if d is mapping else (d.score if d else None) %}
+        {% set grade = d.get('grade') if d is mapping else (d.grade if d else None) %}
+        {% set facts = d.get('facts', {}) if d is mapping else (d.facts if d and d.facts else {}) %}
+        {% set hf = facts.get('header_facts', {}) if facts else {} %}
+        {% set pf = facts.get('platform', {}) if facts else {} %}
+        {% set from_name = hf.get('from_name') if hf else None %}
+        {% set platform_name = pf.get('name', 'Unknown') if pf else 'Unknown' %}
+        {% set subject_full = t.subject or '(none)' %}
+        {% set subject_short = subject_full[:40] ~ ('...' if subject_full|length > 40 else '') %}
+        <tr>
+          <td class="checkCell"><input class="rowCheck" type="checkbox" value="{{ t.id }}" aria-label="Select test {{ t.id }}"></td>
+          <td>{{ t.id }}</td>
+          <td class="subject">{{ platform_name }}</td>
+          <td class="score" style="color: {{ 'var(--green)' if score is not none and score >= 80 else 'var(--yellow)' if score is not none and score >= 60 else 'var(--red)' }};">
+            {% if score is not none %}
+              <span class="gradePill">{{ score }}/100 • {{ grade }}</span>
+            {% else %}
+              <span class="gradePill" style="color: var(--muted);">n/a</span>
+            {% endif %}
+          </td>
+          <td class="subject">{{ from_name or '(none)' }}</td>
+          <td class="subject" title="{{ subject_full }}">{{ subject_short }}</td>
+          <td>
+            {% set src_label = source_label(t.source) %}
+            {% if src_label %}
+              {% set badge_class = 'arf' if t.source == 'simulator-arf' else ('sim' if 'simulator' in (t.source or '') else '') %}
+              <span class="badge {{ badge_class }}" title="source={{ t.source }}">{{ src_label }}</span>
+            {% elif t.source %}
+              <span class="badge" title="source={{ t.source }}">{{ t.source }}</span>
+            {% else %}
+              <span style="color: var(--muted);">—</span>
+            {% endif %}
+          </td>
+          <td>{{ t.created_at }}</td>
+          <td><a href="/ui/tests/{{ t.id }}">View</a></td>
+        </tr>
+      {% endfor %}
+    </table>
+    <div class="pagination">
+      <div>{{ tests|length }} result(s) on this page</div>
+      <div class="pagerBtns">
+        {% if has_prev %}
+          <a class="btn" href="/ui/tests?page={{ prev_page }}&page_size={{ page_size }}&q={{ q|urlencode }}&domain={{ domain|urlencode }}{% if source_filter %}&source={{ source_filter }}{% endif %}">← Prev</a>
+        {% endif %}
+        {% if has_next %}
+          <a class="btn" href="/ui/tests?page={{ next_page }}&page_size={{ page_size }}&q={{ q|urlencode }}&domain={{ domain|urlencode }}{% if source_filter %}&source={{ source_filter }}{% endif %}">Next →</a>
+        {% endif %}
+      </div>
+    </div>
+    <footer class="siteFoot">
+      <div>
+        Built by
+        {% if owner_url %}
+          <a href="{{ owner_url }}" target="_blank" rel="noopener noreferrer">{{ owner_name }}</a>
+        {% else %}
+          {{ owner_name }}
+        {% endif %}
+        &middot; public demo &middot; beta
+      </div>
+      <div>Seed data and all submissions reset daily at 00:00 UTC.</div>
+    </footer>
+  </div>
+  <script>
+    const selectAll = document.getElementById("selectAll");
+    const rowChecks = Array.from(document.querySelectorAll(".rowCheck"));
+    const actionBar = document.getElementById("actionBar");
+    const selectedCount = document.getElementById("selectedCount");
+    const bulkReanalyzeBtn = document.getElementById("bulkReanalyzeBtn");
+    const bulkDeleteBtn = document.getElementById("bulkDeleteBtn");
+    const bulkExportBtn = document.getElementById("bulkExportBtn");
+    const queryText = {{ q|tojson }};
+    const domainText = {{ domain|tojson }};
+
+    // ------- Admin unlock (sessionStorage-scoped; cleared on tab close) -------
+    const ADMIN_STORAGE_KEY = "mailtest.adminKey";
+
+    function getAdminKey() {
+      try { return sessionStorage.getItem(ADMIN_STORAGE_KEY) || ""; }
+      catch (e) { return ""; }
+    }
+
+    function setAdminKey(v) {
+      try {
+        if (v) sessionStorage.setItem(ADMIN_STORAGE_KEY, v);
+        else sessionStorage.removeItem(ADMIN_STORAGE_KEY);
+      } catch (e) { /* ignore */ }
+    }
+
+    function authHeaders() {
+      const k = getAdminKey();
+      return k ? { "X-Admin-Key": k } : {};
+    }
+
+    function refreshAdminUi() {
+      const btn = document.getElementById("adminBtn");
+      if (!btn) return;
+      const active = !!getAdminKey();
+      btn.classList.toggle("is-active", active);
+      btn.textContent = active ? "Admin \u2713" : "Admin";
+      btn.title = active
+        ? "Admin mode active for this tab. Click to clear."
+        : "Unlock destructive actions with your admin key.";
+    }
+
+    async function validateAdminKey(key) {
+      try {
+        const res = await fetch("/admin/ping", {
+          method: "GET",
+          headers: { "X-Admin-Key": key },
+        });
+        return res.ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    const adminBtn = document.getElementById("adminBtn");
+    if (adminBtn) {
+      adminBtn.addEventListener("click", async () => {
+        if (getAdminKey()) {
+          setAdminKey("");
+          refreshAdminUi();
+          return;
+        }
+        const entered = window.prompt("Admin key:", "");
+        if (entered === null) return;
+        const trimmed = entered.trim();
+        if (!trimmed) return;
+        adminBtn.disabled = true;
+        const ok = await validateAdminKey(trimmed);
+        adminBtn.disabled = false;
+        if (!ok) {
+          alert("Admin key rejected. Nothing saved.");
+          return;
+        }
+        setAdminKey(trimmed);
+        refreshAdminUi();
+      });
+      refreshAdminUi();
+    }
+
+    function getSelectedIds() {
+      return rowChecks.filter((cb) => cb.checked).map((cb) => Number(cb.value));
+    }
+
+    function getBulkPayload(ids) {
+      return { ids };
+    }
+
+    function setBulkButtonsBusy(isBusy, labelPrefix) {
+      const buttons = [bulkExportBtn, bulkReanalyzeBtn, bulkDeleteBtn];
+      buttons.forEach((b) => {
+        b.disabled = isBusy;
+      });
+      if (isBusy) {
+        if (labelPrefix === "refresh") bulkReanalyzeBtn.textContent = "Refreshing...";
+        if (labelPrefix === "delete") bulkDeleteBtn.textContent = "Deleting...";
+        if (labelPrefix === "export") bulkExportBtn.textContent = "Exporting...";
+      } else {
+        bulkExportBtn.textContent = "Export JSON";
+        bulkReanalyzeBtn.textContent = "Refresh selected";
+        bulkDeleteBtn.textContent = "Delete selected";
+      }
+    }
+
+    function refreshSelectionUi() {
+      const ids = getSelectedIds();
+      selectedCount.textContent = String(ids.length);
+      actionBar.classList.toggle("is-active", ids.length > 0);
+      const allSelected = rowChecks.length > 0 && ids.length === rowChecks.length;
+      selectAll.checked = allSelected;
+      selectAll.indeterminate = ids.length > 0 && !allSelected;
+    }
+
+    async function runBulkAction(url, ids, successMessage) {
+      if (!ids.length) {
+        alert("Select at least one test first.");
+        return;
+      }
+      const mode = url.includes("/reanalyze")
+        ? "refresh"
+        : (url.includes("/delete") ? "delete" : "export");
+      const friendlyAction = mode === "refresh" ? "Refresh" : (mode === "delete" ? "Delete" : "Action");
+      setBulkButtonsBusy(true, mode);
+      let res;
+      try {
+        res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify(getBulkPayload(ids)),
+        });
+      } catch (err) {
+        setBulkButtonsBusy(false, mode);
+        alert(friendlyAction + " failed: network error.");
+        return;
+      }
+      if (res.status === 403) {
+        setBulkButtonsBusy(false, mode);
+        if (getAdminKey()) {
+          alert("Admin key was rejected. Please unlock Admin again.");
+          setAdminKey("");
+          refreshAdminUi();
+        } else {
+          alert(friendlyAction + " is admin-only in demo mode. Click the Admin button (top-right) and enter your admin key, then try again.");
+        }
+        return;
+      }
+      if (!res.ok) {
+        setBulkButtonsBusy(false, mode);
+        let detail = "HTTP " + res.status;
+        try {
+          const j = await res.json();
+          if (j && j.detail) detail = j.detail;
+        } catch (e) { /* ignore */ }
+        alert(friendlyAction + " failed: " + detail);
+        return;
+      }
+      const data = await res.json();
+      alert(successMessage + "\\nRequested: " + (data.requested ?? ids.length ?? 0));
+      window.location.reload();
+    }
+
+    selectAll.addEventListener("change", () => {
+      rowChecks.forEach((cb) => {
+        cb.checked = selectAll.checked;
+      });
+      refreshSelectionUi();
+    });
+
+    rowChecks.forEach((cb) => {
+      cb.addEventListener("change", refreshSelectionUi);
+    });
+
+    bulkReanalyzeBtn.addEventListener("click", async () => {
+      const ids = getSelectedIds();
+      await runBulkAction("/bulk/tests/reanalyze", ids, "Refresh complete.");
+    });
+
+    bulkExportBtn.addEventListener("click", async () => {
+      const ids = getSelectedIds();
+      if (!ids.length) return;
+
+      if (ids.length === 1) {
+        // If Admin is unlocked, stream the download via fetch so we can
+        // attach X-Admin-Key and get the unredacted payload. Otherwise the
+        // plain navigation is fine — the server will return the redacted
+        // demo-safe JSON.
+        if (getAdminKey()) {
+          try {
+            setBulkButtonsBusy(true, "export");
+            const res = await fetch("/export/" + ids[0], {
+              method: "GET",
+              headers: { ...authHeaders() },
+            });
+            if (res.status === 403) {
+              alert("Admin key was rejected. Please unlock Admin again.");
+              setAdminKey("");
+              refreshAdminUi();
+              setBulkButtonsBusy(false, "export");
+              return;
+            }
+            if (!res.ok) {
+              setBulkButtonsBusy(false, "export");
+              alert("Export failed (HTTP " + res.status + ").");
+              return;
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "email-" + ids[0] + "-full.json";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          } catch (err) {
+            alert("Export failed. Please try again.");
+          } finally {
+            setBulkButtonsBusy(false, "export");
+          }
+          return;
+        }
+        window.location.href = "/export/" + ids[0];
+        return;
+      }
+
+      try {
+        setBulkButtonsBusy(true, "export");
+        const res = await fetch("/bulk/tests/export", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify(getBulkPayload(ids)),
+        });
+        if (!res.ok) {
+          setBulkButtonsBusy(false, "export");
+          alert("Export failed. Please try again.");
+          return;
+        }
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "email-tests-export.zip";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        setBulkButtonsBusy(false, "export");
+      } catch (err) {
+        setBulkButtonsBusy(false, "export");
+        alert("Export failed. Please try again.");
+      }
+    });
+
+    bulkDeleteBtn.addEventListener("click", async () => {
+      const ids = getSelectedIds();
+      if (!ids.length) return;
+      const ok = window.confirm(
+        "Delete " + ids.length + " selected test(s)? This cannot be undone."
+      );
+      if (!ok) return;
+      await runBulkAction("/bulk/tests/delete", ids, "Delete complete.");
+    });
+
+    refreshSelectionUi();
+
+    const addrBtn = document.getElementById("addrActionBtn");
+    const addrChip = document.getElementById("demoAddrChip");
+    let addrValue = null;
+    let addrRevealed = false;
+
+    function getAddr() {
+      if (addrValue !== null) return addrValue;
+      const b64 = addrChip && addrChip.getAttribute("data-addr-b64");
+      if (!b64) return "";
+      try { addrValue = atob(b64); } catch (e) { addrValue = ""; }
+      return addrValue;
+    }
+
+    const heroCopyHint = document.getElementById("heroCopyHint");
+    const COPY_HINT_DEFAULT = heroCopyHint ? heroCopyHint.textContent : "";
+    let copyFlashTimer = null;
+
+    function revealAddr() {
+      const v = getAddr();
+      if (!v || !addrChip) return false;
+      addrChip.removeAttribute("data-addr-b64");
+      const copyEl = document.createElement("span");
+      copyEl.className = "addrLink";
+      copyEl.textContent = v;
+      copyEl.setAttribute("role", "button");
+      copyEl.setAttribute("tabindex", "0");
+      copyEl.setAttribute("title", "Click to copy");
+      copyEl.setAttribute("aria-label", "Copy demo address to clipboard");
+      copyEl.addEventListener("click", copyAddr);
+      copyEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          copyAddr();
+        }
+      });
+      addrChip.innerHTML = "";
+      addrChip.appendChild(copyEl);
+      if (heroCopyHint) heroCopyHint.classList.add("is-visible");
+      addrRevealed = true;
+      return true;
+    }
+
+    function flashCopyFeedback() {
+      if (copyFlashTimer) {
+        clearTimeout(copyFlashTimer);
+        copyFlashTimer = null;
+      }
+      if (addrChip) addrChip.classList.add("copied");
+      if (addrBtn) {
+        addrBtn.textContent = "Copied \u2713";
+        addrBtn.classList.add("copied");
+      }
+      if (heroCopyHint) {
+        heroCopyHint.textContent = "Copied to clipboard \u2713";
+        heroCopyHint.classList.add("copied");
+      }
+      copyFlashTimer = setTimeout(() => {
+        if (addrChip) addrChip.classList.remove("copied");
+        if (addrBtn) {
+          addrBtn.textContent = "Copy";
+          addrBtn.classList.remove("copied");
+        }
+        if (heroCopyHint) {
+          heroCopyHint.textContent = COPY_HINT_DEFAULT;
+          heroCopyHint.classList.remove("copied");
+        }
+        copyFlashTimer = null;
+      }, 1600);
+    }
+
+    function fallbackCopy(text) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        ta.style.top = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        ta.remove();
+        return ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function copyAddr() {
+      const v = getAddr();
+      if (!v) return;
+      let ok = false;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(v);
+          ok = true;
+        }
+      } catch (err) { /* fall through to execCommand */ }
+      if (!ok) ok = fallbackCopy(v);
+      if (ok) {
+        flashCopyFeedback();
+      } else if (addrBtn) {
+        addrBtn.textContent = "Copy failed";
+        setTimeout(() => { addrBtn.textContent = "Copy"; }, 1600);
+      }
+    }
+
+    if (addrBtn && addrChip) {
+      addrBtn.addEventListener("click", async () => {
+        if (!addrRevealed) {
+          if (revealAddr()) {
+            addrBtn.textContent = "Copy";
+            addrBtn.setAttribute("aria-label", "Copy demo address to clipboard");
+          }
+          return;
+        }
+        await copyAddr();
+      });
+    }
+  </script>
+</body>
+</html>

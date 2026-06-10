@@ -1,0 +1,48 @@
+# ---- secrets / local config ----
+.env
+.env.*
+!.env.example
+
+# ---- Python build artifacts ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- virtualenvs ----
+.venv/
+venv/
+env/
+
+# ---- editor / OS junk ----
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ---- logs / runtime state ----
+*.log
+*.pid
+
+# ---- local Docker volumes / queue data (if ever bind-mounted) ----
+bridge/queue/
+db-data/
+
+# ---- ops keys / certs that must never be committed ----
+ops/**/*.key
+ops/**/*.pem
+ops/**/id_ed25519*
+ops/**/id_rsa*
+ops/**/*.env
+!ops/**/*.env.example
+
+# ---- generated archives / backups ----
+*.zip
+*.tar
+*.tar.gz
+*.tgz

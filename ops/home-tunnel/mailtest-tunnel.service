@@ -1,0 +1,47 @@
+# /etc/systemd/system/mailtest-tunnel.service
+#
+# Persistent SSH reverse tunnel from the home Docker stack to the public VPS.
+# Setup and hardening notes: ops/home-tunnel/README.md.
+
+[Unit]
+Description=Mailtest reverse SSH tunnel (home -> VPS)
+# Wait until the network is really up and Docker has started the API it forwards to.
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Set this to the unprivileged home user that owns the SSH key referenced below.
+User=justin
+EnvironmentFile=/etc/mailtest-tunnel.env
+
+# -M 0                              : disable autossh's own monitor port; we rely on SSH keepalives.
+# ServerAliveInterval / CountMax    : detect a dead peer in ~90s and exit so systemd can restart us.
+# ExitOnForwardFailure=yes          : if the remote port is stuck bound by a stale sshd, fail fast.
+# StrictHostKeyChecking=accept-new  : trust-on-first-use; reject later if the host key changes.
+ExecStart=/usr/bin/autossh -M 0 -N \
+  -o "ServerAliveInterval=30" \
+  -o "ServerAliveCountMax=3" \
+  -o "ExitOnForwardFailure=yes" \
+  -o "StrictHostKeyChecking=accept-new" \
+  -o "UserKnownHostsFile=/home/justin/.ssh/known_hosts" \
+  -i ${SSH_KEY} \
+  -R ${REMOTE_BIND}:localhost:${LOCAL_PORT} \
+  ${SSH_TARGET}
+
+Restart=always
+RestartSec=10s
+
+# Hardening: the tunnel process doesn't need most of the kernel or filesystem.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,59 @@
+Return-Path: <bounces+receipt@mail.example-saas.com>
+Received: from mx-out01.example-saas.com (mx-out01.example-saas.com. [192.0.2.91])
+	by mx.example.com with ESMTPS id qwer1234-5678tyui.15.2026.04.15.08.30.10
+	for <customer@example.com>
+	(version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+	Tue, 15 Apr 2026 08:30:11 -0800 (PST)
+Received-SPF: pass (example.com: domain of bounces+receipt@mail.example-saas.com designates 192.0.2.91 as permitted sender)
+Authentication-Results: mx.example.com;
+       spf=pass smtp.mailfrom=bounces+receipt@mail.example-saas.com;
+       dkim=pass header.i=@example-saas.com header.s=selector1;
+       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=example-saas.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=example-saas.com;
+	s=selector1; t=1776543011;
+	h=From:To:Subject:Date:Message-ID;
+	bh=Q4Yk5k+U3tmV0FfL1+zH5g1K1r0S8v6wQxIkh0fV4Yk=;
+	b=FakeSignatureForDemoPurposesOnly1234567890abcdefghijklmnopqrstuvwxyz==
+From: Example SaaS <receipts@example-saas.com>
+To: customer@example.com
+Subject: Your receipt from Example SaaS (Invoice #INV-2026-04-15-7721)
+Date: Tue, 15 Apr 2026 08:30:05 -0800
+Message-ID: <inv-2026-04-15-7721@mail.example-saas.com>
+List-Unsubscribe: <mailto:unsubscribe+7721@mail.example-saas.com>, <https://example-saas.com/unsub?t=abc123>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="boundary-receipt"
+
+--boundary-receipt
+Content-Type: text/plain; charset="utf-8"
+
+Thanks for your payment!
+
+Invoice: INV-2026-04-15-7721
+Amount:  $29.00 USD
+Plan:    Pro (monthly)
+
+Manage billing: https://example-saas.com/billing
+
+— The Example SaaS team
+
+--boundary-receipt
+Content-Type: text/html; charset="utf-8"
+
+<!DOCTYPE html>
+<html>
+<body style="font-family: -apple-system, system-ui, sans-serif; max-width: 560px; color: #222;">
+  <h2 style="margin-bottom: 4px;">Thanks for your payment!</h2>
+  <p style="color: #666; margin-top: 0;">Receipt for Invoice #INV-2026-04-15-7721</p>
+  <table style="border-collapse: collapse; width: 100%;">
+    <tr><td style="padding: 6px 0;">Plan</td><td style="padding: 6px 0; text-align: right;">Pro (monthly)</td></tr>
+    <tr><td style="padding: 6px 0;">Amount</td><td style="padding: 6px 0; text-align: right;"><strong>$29.00 USD</strong></td></tr>
+  </table>
+  <p><a href="https://example-saas.com/billing"
+        style="display: inline-block; padding: 10px 14px; background: #0a66c2; color: white; text-decoration: none; border-radius: 4px;">
+     Manage billing</a></p>
+  <p style="color: #888; font-size: 12px;">— The Example SaaS team</p>
+</body>
+</html>
+
+--boundary-receipt--

@@ -1,0 +1,44 @@
+Return-Path: <hello@smallshop.example>
+Received: from mail.smallshop.example (mail.smallshop.example. [198.51.100.22])
+	by mx.example.com with ESMTPS id zz99ww88-1234xyz.8.2026.04.12.11.02.45
+	for <buyer@example.com>
+	(version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+	Sun, 12 Apr 2026 11:02:46 -0800 (PST)
+Received-SPF: pass (example.com: domain of hello@smallshop.example designates 198.51.100.22 as permitted sender)
+Authentication-Results: mx.example.com;
+       spf=pass smtp.mailfrom=hello@smallshop.example;
+       dkim=none;
+       dmarc=fail (p=NONE sp=NONE dis=NONE) header.from=smallshop.example
+From: Small Shop <hello@smallshop.example>
+To: buyer@example.com
+Subject: Thanks for your order #10482
+Date: Sun, 12 Apr 2026 11:02:40 -0800
+Message-ID: <order-10482@smallshop.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="boundary-shop-42"
+
+--boundary-shop-42
+Content-Type: text/plain; charset="utf-8"
+
+Hi,
+
+Thanks for your order! Your order #10482 is confirmed.
+
+We'll send tracking info when it ships.
+
+-- Small Shop Team
+
+--boundary-shop-42
+Content-Type: text/html; charset="utf-8"
+
+<!DOCTYPE html>
+<html>
+<body style="font-family: system-ui, sans-serif; max-width: 560px;">
+  <h2>Thanks for your order!</h2>
+  <p>Your order <strong>#10482</strong> is confirmed. We'll email you tracking
+     as soon as it ships.</p>
+  <p>— Small Shop Team</p>
+</body>
+</html>
+
+--boundary-shop-42--

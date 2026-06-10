@@ -1,0 +1,6 @@
+# Install as /etc/postfix/transport on the VPS.
+# Replace 10.200.0.2 with your HOME WireGuard IP (same as in wg0 on home).
+
+mailtest.justfortesting.xyz    smtp:[10.200.0.2]:10025
+
+# Then run: sudo postmap /etc/postfix/transport && sudo postfix reload

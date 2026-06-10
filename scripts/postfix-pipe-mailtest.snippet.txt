@@ -1,0 +1,47 @@
+# --- /etc/postfix/master.cf (then: postfix check && systemctl reload postfix) ---
+#
+# Minimal pipe flags: do NOT use F (mbox From_) or R (Return-Path) — extra headers can break DKIM.
+# postfix_pipe_ingest.py records MAIL FROM as X-Mailtest-Envelope-From and adds Return-Path
+# when missing (same as the email bridge). Run as an unprivileged user; ensure that user can
+# resolve/reach INGEST_URL (e.g. 127.0.0.1:18080).
+#
+# Pass MAIL FROM in explicitly via /usr/bin/env. pipe(8) is documented to export SENDER
+# automatically, but on some builds (observed on Rocky 9 / Postfix 3.x) it arrives empty
+# at the child process, so the script falls back to <> and SPF can't be evaluated. Setting
+# SENDER=${sender} on the argv line removes the implicit dependency.
+#
+# Passing ${recipient} lets the pipe script detect Amazon SES-style mailbox simulator
+# addresses (currently: complaint@<domain>).
+
+mailtest-pipe unix  -  n  n  -  -  pipe
+  flags= user=nobody argv=/usr/bin/env SENDER=${sender} /usr/local/bin/mailtest-pipe-ingest ${recipient}
+
+# --- Wrapper script (/usr/local/bin/mailtest-pipe-ingest) ---
+#
+#   #!/bin/sh
+#   export INGEST_URL=http://127.0.0.1:18080/ingest
+#   export SOURCE=postfix-pipe
+#   export MAILTEST_DOMAIN=mailtest.justfortesting.xyz
+#   exec /usr/bin/python3 /usr/local/lib/mailtest/postfix_pipe_ingest.py "$@"
+
+# --- /etc/postfix/transport (then: postmap /etc/postfix/transport && postfix reload) ---
+#
+#   mailtest.justfortesting.xyz    mailtest-pipe:
+
+# --- /etc/postfix/main.cf additions ---
+#
+#   transport_maps = hash:/etc/postfix/transport
+#
+#   # SES-style bounce simulator: reject bounce@<domain> at SMTP RCPT time with 550 5.1.1.
+#   smtpd_recipient_restrictions =
+#     permit_mynetworks,
+#     check_recipient_access hash:/etc/postfix/recipient_access,
+#     reject_unauth_destination
+
+# --- /etc/postfix/recipient_access (then: postmap /etc/postfix/recipient_access && postfix reload) ---
+#
+#   bounce@mailtest.justfortesting.xyz  550 5.1.1 User unknown (Mailtest bounce simulator)
+
+# --- Optional (may help DKIM; test after each change) ---
+#
+#   disable_mime_output_conversion = yes
