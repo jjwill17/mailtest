@@ -1,0 +1,18 @@
+# /etc/systemd/system/mailtest-watchdog.timer
+#
+# Fires mailtest-watchdog.service every minute. Setup notes:
+# ops/home-watchdog/README.md.
+
+[Unit]
+Description=Run mailtest-watchdog every minute
+Requires=mailtest-watchdog.service
+
+[Timer]
+# Don't probe immediately on boot — Docker may still be starting.
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+Unit=mailtest-watchdog.service
+
+[Install]
+WantedBy=timers.target

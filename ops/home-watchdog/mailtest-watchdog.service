@@ -1,0 +1,28 @@
+# /etc/systemd/system/mailtest-watchdog.service
+#
+# One-shot health probe + auto-heal for the local mailtest API. Triggered
+# every minute by mailtest-watchdog.timer. Setup notes: ops/home-watchdog/README.md.
+
+[Unit]
+Description=Mailtest local API health watchdog (one-shot)
+After=docker.service network-online.target
+Wants=docker.service
+
+[Service]
+Type=oneshot
+User=justin
+# Need the standard PATH so curl + docker resolve, and a HOME for any
+# docker-credential-helper lookups docker compose might do.
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=HOME=/home/justin
+
+# /run/mailtest-watchdog/ — owned by User above, used for the cooldown file.
+RuntimeDirectory=mailtest-watchdog
+RuntimeDirectoryMode=0755
+
+ExecStart=/home/justin/mailtest/ops/home-watchdog/mailtest-watchdog.sh
+
+# exit 0 = healthy, exit 1 = cooldown skip — neither should mark the unit failed.
+# exit 2/3 (cannot cd, still-down-after-restart) WILL fail the unit and surface
+# in `systemctl status` for visibility.
+SuccessExitStatus=0 1
