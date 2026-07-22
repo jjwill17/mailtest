@@ -1,14 +1,25 @@
-# Home-side API watchdog
+# Home-side API + tunnel watchdog
 
-Self-healing watchdog that catches the recurring **"WSL ↔ docker-proxy port
-mapping goes stale"** failure mode. Symptom: `https://demo...xyz` returns 502
-from Caddy, `docker compose ps` shows `mailtest-api` as `Up`, uvicorn logs look
-fine, but `curl http://127.0.0.1:8080/health` from the WSL host hangs or fails.
+Two-layer self-diagnosis watchdog that catches the recurring failure modes
+this project has hit in production:
 
-The watchdog probes `/health` every minute; if it fails twice in a row it
-restarts the `api` container. A 10-minute cooldown prevents thrashing during a
-real outage so [HetrixTools](https://hetrixtools.com) (or whichever external
-monitor you use) can still page you.
+**Layer 1 — Local API health (auto-heals).** Catches the *"WSL ↔ docker-proxy
+port mapping goes stale"* symptom: `https://demo...xyz` returns `502` from
+Caddy, `docker compose ps` shows `mailtest-api` as `Up`, uvicorn logs look
+fine, but `curl http://127.0.0.1:8080/health` from the WSL host hangs.
+Probes every minute; if `/health` fails twice in a row (5s apart), kicks the
+`api` container so `docker-proxy` re-binds. A 10-minute cooldown prevents
+thrashing during a real outage so [HetrixTools](https://hetrixtools.com)
+still pages you.
+
+**Layer 2 — Public URL health (diagnoses, doesn't heal).** Runs only when
+Layer 1 was healthy. Probes the public URL; if it's down while the local API
+is fine, the fault is on the tunnel/VPS side. Fingerprints the cause using
+`systemctl is-active mailtest-tunnel` and prints a targeted diagnostic
+(including the exact fix command) into the journal. Rate-limited to one
+diagnostic every 15 minutes during a sustained outage. **Does not** auto-heal
+because that would require stashing an admin SSH key on this host — the
+diagnostic points you at the one command to run on the VPS instead.
 
 ## Files
 
@@ -69,14 +80,17 @@ then `docker compose ps` will show `api` running again.
 
 ## Tuning
 
-The script honors three environment variables; defaults are usually fine.
-Override by editing the `Environment=` lines in the `.service` unit:
+The script honors these environment variables; defaults are usually fine.
+Override by adding `Environment=NAME=value` lines to the `.service` unit:
 
 | Var | Default | What |
 |--|--|--|
-| `HEALTH_URL`        | `http://127.0.0.1:8080/health` | What to probe. |
-| `COMPOSE_DIR`       | `/home/justin/mailtest`        | Where `docker compose` runs. |
-| `COOLDOWN_SECONDS`  | `600`                          | Min seconds between auto-heals. |
+| `HEALTH_URL`                    | `http://127.0.0.1:8080/health`                 | Layer 1 probe target. |
+| `PUBLIC_URL`                    | `https://demo.mailtest.justfortesting.xyz/health` | Layer 2 probe target. |
+| `COMPOSE_DIR`                   | `/home/justin/mailtest`                        | Where `docker compose` runs. |
+| `COOLDOWN_SECONDS`              | `600`                                          | Min seconds between Layer 1 auto-heals. |
+| `PUBLIC_DIAG_COOLDOWN_SECONDS`  | `900`                                          | Min seconds between Layer 2 diagnostic re-logs. |
+| `TUNNEL_SERVICE`                | `mailtest-tunnel.service`                      | Systemd unit checked to fingerprint tunnel faults. |
 
 ## Disable temporarily [home]
 
