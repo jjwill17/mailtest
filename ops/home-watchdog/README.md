@@ -14,12 +14,20 @@ still pages you.
 
 **Layer 2 — Public URL health (diagnoses, doesn't heal).** Runs only when
 Layer 1 was healthy. Probes the public URL; if it's down while the local API
-is fine, the fault is on the tunnel/VPS side. Fingerprints the cause using
-`systemctl is-active mailtest-tunnel` and prints a targeted diagnostic
-(including the exact fix command) into the journal. Rate-limited to one
-diagnostic every 15 minutes during a sustained outage. **Does not** auto-heal
-because that would require stashing an admin SSH key on this host — the
-diagnostic points you at the one command to run on the VPS instead.
+is fine, fingerprints the fault with TCP probes to the VPS (`:22` / `:443`)
+plus recent tunnel journal lines, then prints a targeted diagnostic into the
+journal. Distinguishes:
+
+| Fingerprint | Typical cause |
+|--|--|
+| VPS `:22` times out | VPS down / provider network / host wedged |
+| Tunnel log: `remote port forwarding failed for listen port 18080` | Stale sshd holding the forward |
+| VPS `:22` OK, `:443` fail | Caddy down |
+| Home `1.1.1.1:443` fail | Home internet outage |
+
+Rate-limited to one diagnostic every 15 minutes (state in
+`~/.cache/mailtest-watchdog/`). **Does not** auto-heal Layer 2 — that would
+require an admin SSH key on this host.
 
 ## Files
 
@@ -91,6 +99,8 @@ Override by adding `Environment=NAME=value` lines to the `.service` unit:
 | `COOLDOWN_SECONDS`              | `600`                                          | Min seconds between Layer 1 auto-heals. |
 | `PUBLIC_DIAG_COOLDOWN_SECONDS`  | `900`                                          | Min seconds between Layer 2 diagnostic re-logs. |
 | `TUNNEL_SERVICE`                | `mailtest-tunnel.service`                      | Systemd unit checked to fingerprint tunnel faults. |
+| `VPS_HOST` / `VPS_IP`           | `mailtest.justfortesting.xyz` / `209.141.48.115` | Targets for Layer 2 TCP reachability probes. |
+| `STATE_DIR`                     | `~/.cache/mailtest-watchdog`                   | Persistent cooldown files (must survive oneshot exits). |
 
 ## Disable temporarily [home]
 

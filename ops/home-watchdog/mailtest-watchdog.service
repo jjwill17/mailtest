@@ -16,13 +16,14 @@ User=justin
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 Environment=HOME=/home/justin
 
-# /run/mailtest-watchdog/ — owned by User above, used for the cooldown file.
-RuntimeDirectory=mailtest-watchdog
-RuntimeDirectoryMode=0755
+# Cooldown state lives in $HOME/.cache/mailtest-watchdog (see the script).
+# Do NOT use RuntimeDirectory for that — Type=oneshot wipes it on exit and
+# defeated the Layer 2 diagnostic rate-limit.
 
 ExecStart=/home/justin/mailtest/ops/home-watchdog/mailtest-watchdog.sh
 
-# exit 0 = healthy, exit 1 = cooldown skip — neither should mark the unit failed.
-# exit 2/3 (cannot cd, still-down-after-restart) WILL fail the unit and surface
-# in `systemctl status` for visibility.
-SuccessExitStatus=0 1
+# 0 = healthy / healed
+# 1 = Layer 1 cooldown skip
+# 4 = Layer 2 public-URL down (diagnostic logged or cooldown skip)
+# 2/3 remain real failures (cannot cd / still down after restart).
+SuccessExitStatus=0 1 4
