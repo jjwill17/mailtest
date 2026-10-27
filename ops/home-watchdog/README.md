@@ -20,7 +20,8 @@ journal. Distinguishes:
 
 | Fingerprint | Typical cause |
 |--|--|
-| VPS `:22` times out | VPS down / provider network / host wedged |
+| VPS `:22` times out, LV looking glass `:80` OK | **Your slice is wedged** — hard-reset in Stallion via my.frantech.ca |
+| VPS `:22` times out, LV looking glass `:80` FAIL | BuyVM Las Vegas fabric outage — wait it out |
 | Tunnel log: `remote port forwarding failed for listen port 18080` | Stale sshd holding the forward |
 | VPS `:22` OK, `:443` fail | Caddy down |
 | Home `1.1.1.1:443` fail | Home internet outage |

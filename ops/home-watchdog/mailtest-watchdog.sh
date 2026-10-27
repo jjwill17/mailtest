@@ -35,6 +35,10 @@ PUBLIC_DIAG_COOLDOWN_SECONDS="${PUBLIC_DIAG_COOLDOWN_SECONDS:-900}"
 TUNNEL_SERVICE="${TUNNEL_SERVICE:-mailtest-tunnel.service}"
 VPS_HOST="${VPS_HOST:-mailtest.justfortesting.xyz}"
 VPS_IP="${VPS_IP:-209.141.48.115}"
+# BuyVM Las Vegas looking glass — used to distinguish a region fabric
+# outage from a single-slice failure (this host's VPS IP alone).
+LV_FABRIC_HOST="${LV_FABRIC_HOST:-209.141.56.135}"
+FRANTECH_PANEL_URL="${FRANTECH_PANEL_URL:-https://my.frantech.ca/}"
 
 # Persist cooldown state across oneshot runs. RuntimeDirectory is wiped when
 # a Type=oneshot unit exits, which used to defeat the 15-min diagnostic
@@ -121,6 +125,8 @@ vps_ssh_ok=0
 tcp_ok "$VPS_IP" 22 && vps_ssh_ok=1
 vps_https_ok=0
 tcp_ok "$VPS_IP" 443 && vps_https_ok=1
+lv_fabric_ok=0
+tcp_ok "$LV_FABRIC_HOST" 80 && lv_fabric_ok=1
 
 echo "======================================================================="
 echo "PUBLIC URL DOWN: $PUBLIC_URL"
@@ -129,6 +135,7 @@ echo "  Re-logs at most every ${PUBLIC_DIAG_COOLDOWN_SECONDS}s during a sustaine
 echo
 echo "  Tunnel service state : $tunnel_state"
 echo "  Home internet (1.1.1.1:443): $([[ $internet_ok -eq 1 ]] && echo OK || echo FAIL)"
+echo "  LV fabric (${LV_FABRIC_HOST}:80): $([[ $lv_fabric_ok -eq 1 ]] && echo OK || echo FAIL)"
 echo "  VPS SSH   (${VPS_IP}:22)   : $([[ $vps_ssh_ok -eq 1 ]] && echo OK || echo FAIL)"
 echo "  VPS HTTPS (${VPS_IP}:443)  : $([[ $vps_https_ok -eq 1 ]] && echo OK || echo FAIL)"
 echo
@@ -139,19 +146,24 @@ echo
 if [[ $internet_ok -eq 0 ]]; then
   echo "  DIAGNOSIS: Home internet upstream is broken."
   echo "  Fix: restore home connectivity. autossh will reconnect on its own."
+elif [[ $vps_ssh_ok -eq 0 && $lv_fabric_ok -eq 1 ]]; then
+  echo "  DIAGNOSIS: Your VPS slice is down; the BuyVM Las Vegas fabric is up."
+  echo "  Local stack + home internet + LV looking glass are fine. Only"
+  echo "  ${VPS_IP} is unreachable — typical of a wedged/halted KVM slice."
+  echo
+  echo "  Fix (only you can do this — no SSH path exists while the slice is dead):"
+  echo "      1. Open ${FRANTECH_PANEL_URL} → Services → your VPS → Stallion"
+  echo "      2. Power → Hard Reset (or Stop, wait 30s, Start)"
+  echo "      3. Wait ~2 minutes, then from home verify:"
+  echo "           curl -sf http://127.0.0.1:8080/health && \\"
+  echo "             curl -sf https://demo.mailtest.justfortesting.xyz/health"
+  echo
+  echo "  Once the slice answers on :22, autossh reconnects within ~2–3 minutes."
 elif [[ $vps_ssh_ok -eq 0 ]]; then
-  echo "  DIAGNOSIS: VPS is unreachable from home (TCP ${VPS_IP}:22 times out)."
-  echo "  Local stack + home internet are fine; the tunnel cannot re-establish"
-  echo "  until the VPS answers on port 22 again."
-  echo
-  echo "  Check from the VPS provider console / KVM (not over SSH):"
-  echo "      1. Is the VPS powered on?"
-  echo "      2. systemctl is-active sshd caddy postfix"
-  echo "      3. sudo ss -lntp 'sport = :22 or sport = :443 or sport = :18080'"
-  echo "      4. If the host is wedged: reboot from the provider panel."
-  echo
-  echo "  Once the VPS answers on :22, autossh on this host reconnects"
-  echo "  automatically within ~2–3 minutes (no home-side action needed)."
+  echo "  DIAGNOSIS: VPS is unreachable AND the BuyVM LV fabric looks down too."
+  echo "  Likely a region-wide FranTech/BuyVM Las Vegas outage."
+  echo "  Check https://www.buyvmstatus.com/ and Frantech Discord; wait it out."
+  echo "  autossh will reconnect on its own when the fabric returns."
 elif echo "$recent_tunnel" | grep -q 'remote port forwarding failed for listen port 18080'; then
   echo "  DIAGNOSIS: Stale sshd on the VPS is holding port 18080."
   echo "  Fix from the VPS:"
